@@ -37,17 +37,18 @@ class MyWebServer(socketserver.BaseRequestHandler):
         print(request)
         method = request[0]
         path = os.path.normpath(request[1]) #normalize case of pathname
-        http_version = request[2]
+        http_version = request[2][:8].strip()
+        print(http_version)
         other_methods = ["OPTIONS", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"] # all methods defined in rfc266 other than GET
 
         if method == "GET":
             print("\n\n\n GET \n\n\n")
             relative_path = "./www" + path
             print(relative_path)
-            if http_version == 'HTTP\1.1' and "Host" not in request:
-                self.request.sendall(bytearray(f"{http_version} 400 Bad Request\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n", 'utf-8'))
+            # if http_version == 'HTTP/1.1' and "Host" not in request:
+            #     self.request.sendall(bytearray(f"{http_version} 400 Bad Request\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n", 'utf-8'))
 
-            elif os.path.isdir(relative_path):
+            if os.path.isdir(relative_path):
                 # when path is an existing directory
                 if path[-1] == '/':
                     print("\n\n\nhaha\n\n\n")
