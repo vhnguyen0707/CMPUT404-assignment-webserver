@@ -1,4 +1,6 @@
 #  coding: utf-8 
+import os
+import re
 import socketserver
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
@@ -31,8 +33,62 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        request = self.data.decode("utf-8").split(' ')
+        print(request)
+        method = request[0]
+        path = os.path.normpath(request[1]) #normalize case of pathname
+        http_version = request[2]
+        other_methods = ["OPTIONS", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"] # all methods defined in rfc266 other than GET
+
+        if method == "GET":
+            print("\n\n\n GET \n\n\n")
+            relative_path = "./www" + path
+            print(relative_path)
+            if http_version == 'HTTP\1.1' and "Host" not in request:
+                self.request.sendall(bytearray(f"{http_version} 400 Bad Request\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n", 'utf-8'))
+
+            elif os.path.isdir(relative_path):
+                # when path is an existing directory
+                if path[-1] == '/':
+                    print("\n\n\nhaha\n\n\n")
+                    try:
+                        f = open(f'{relative_path}/index.html', 'r')
+                        content = f.read()
+                        content_length = len(content)
+                        response = f'{http_version} 200 OK\r\nContent-Type: text/html\r\nContent-Length: {content_length}\r\n\r\ncontent'
+                        self.request.sendall(bytearray(response, 'utf-8'))
+                    except:
+                        # error reading file occured
+                        self.request.sendall(bytearray(f"{http_version} 500 Internal Server Error\r\n", 'utf-8'))
+
+                else: 
+                    self.request.sendall(bytearray(f'{http_version} 301 Moved Permanently\r\nContent-Type: text/html\r\nConnection:Close\r\nLocation: {path}/\r\n\r\n', 'utf-8'))    
+            
+            elif os.path.isfile(relative_path):
+                # when path is an existing file
+                try:
+                    f = open(f'{relative_path}/index.html', 'r')
+                    content = f.read()
+                    content_length = len(content)
+                    if path[-5:] == '.html': 
+                        content_type = 'text/html'
+                    elif path[-4:] == '.css':
+                        content_type = 'text/css'
+                    response = f'{http_version} 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {content_length}\r\n\r\ncontent'
+                    self.request.sendall(bytearray(response, 'utf-8'))
+                except:
+                    # error reading file occured
+                    self.request.sendall(bytearray(f"{http_version} 500 Internal Server Error\r\n", 'utf-8'))
+            else:
+                # not a valid path
+                self.request.sendall(bytearray(f'{http_version} 404 Not Found\r\nContent-Type: text/html\r\nConnection:Close\r\n\r\n', 'utf-8'))
+
+
+        elif method in other_methods:
+            self.request.sendall(bytearray(f"{http_version} 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n", 'utf-8'))
+        else: 
+            self.request.sendall(bytearray(f"{http_version} 400 Bad Request\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n", 'utf-8'))
+        #self.request.sendall(bytearray("OK",'utf-8'))
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
