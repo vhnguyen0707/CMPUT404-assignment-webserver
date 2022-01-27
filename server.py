@@ -35,7 +35,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         request = self.data.decode("utf-8").split(' ')
         try:
             method = request[0]
-            path = request[1] 
+            path = request[1]
             http_version = request[2][:8].strip()       # get http version
             other_methods = ["OPTIONS", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"]        # all methods defined in rfc266 other than GET
 
@@ -58,7 +58,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
                             self.request.sendall(bytearray(f"{http_version} 500 Internal Server Error\r\n", 'utf-8'))
 
                     else: 
-                        self.request.sendall(bytearray(f'{http_version} 301 Moved Permanently\r\nContent-Type: text/html\r\nConnection:Close\r\nLocation: {path}/\r\n\r\n', 'utf-8'))    
+                        self.request.sendall(bytearray(f'{http_version} 301 Moved Permanently\r\nContent-Type: text/html\r\nLocation: {path}/\r\n\r\n', 'utf-8'))    
                 
                 elif os.path.isfile(relative_path):
                     # when path is an existing file
